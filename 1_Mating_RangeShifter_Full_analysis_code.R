@@ -42,7 +42,8 @@ virid.pal<-viridis(9)
 #Landscape file####
 #Initialisation file - for half population
 
-setwd("D:/W.Morgan/Wills_stuff/RangeShifter_chptr/Experiment_5a_HIGHSURVIVAL/Inputs")
+setwd("C:/Users/whm20/OneDrive/Documents/Documents/PhD/University PC back-up/Wills_stuff/RangeShifter_chptr/Experiment_5a_HIGHSURVIVAL/Inputs")
+
 
 #land 0
 ls0.07_0<- as.matrix(read.table("Series0discRandom_X20Y1000_p0.07_nr0.txt", skip = 6)) #use the skip argument to only read the matrix, not the meta data
@@ -145,7 +146,7 @@ write.table(RngSh_half_.L2.50.1, file = "init_fem_half_50.L2.1.txt", sep = "\t",
 #
 ######################################################################################################################################################
 
-setwd("D:/W.Morgan/Wills_stuff/RangeShifter_chptr/Experiment_5a_HIGHSURVIVAL/Outputs")
+setwd("C:/Users/whm20/OneDrive/Documents/Documents/PhD/University PC back-up/Wills_stuff/RangeShifter_chptr/Experiment_5a_HIGHSURVIVAL/Outputs")
 
 #Read in population files and add parameter info for habitat quality (dd) and fecundity (f)####
 
@@ -541,20 +542,16 @@ table(occupancy.inits.zone50.complete$dd,occupancy.inits.zone50.complete$fecund,
 occupancy.inits.zone50.complete$dd.fac<- factor(occupancy.inits.zone50.complete$dd)
 occupancy.inits.zone50.complete$fecund.fac<- factor(occupancy.inits.zone50.complete$fecund)
 
-prev1<- lm(prop.occ~dd.fac+fecund.fac+mating, data=occupancy.inits.zone50.complete)
+prev1<- lm(prop.occ~dd.fac*fecund.fac*mating, data=occupancy.inits.zone50.complete)
 
-
-
-prev2<-lm(prop.occ~dd.fac+fecund.fac+mating+
-            dd.fac:fecund.fac+dd.fac:mating+fecund.fac:mating, data=occupancy.inits.zone50.complete)
-
-
-prev3<- lm(prop.occ~dd.fac*fecund.fac*mating, data=occupancy.inits.zone50.complete)
-
-summary(prev1)$adj.r.squared;summary(prev2)$adj.r.squared;summary(prev3)$adj.r.squared
+summary(prev1)$adj.r.squared
 
 ########
-anova(prev3)
+# See variance explained by each main effect and interaction
+prev1.fit<- anova(prev1)
+prev1.fit.ssq<- prev1.fit$`Sum Sq`
+var.expl<- prev1.fit.ssq/sum(prev1.fit.ssq)*100
+round(var.expl,1)
 
 plot.occ<- ddply(occupancy.inits.zone50.complete, c("fecund", "dd", "mating"), summarise, mean.occ=mean(prop.occ), se.occ=se(prop.occ))
 
@@ -580,130 +577,130 @@ occ.plot.object<-ggplot()+
 #ggsave("occupancyVsHabitat_facet_by_fecund.jpeg",dpi=300,device="jpeg",width=18,height=7, units="cm")
 
 
-######################################################################################################################################################
-#
-#Below is a 2-step analysis option looking first at persistence then proportional occupancy.
-#I think the above version - just mean proportional occupancy at year 50 - is a neater option and shows the key finding in one go
-#
-######################################################################################################################################################
-######################################################################################################################################################
-######################################################################################################################################################
-#Persistence####
-#
-#Add those combos that are not present anymore (pop went extint) and partition variance for persistence/extinction
-
-
-#Polygyny
-poly.to.add<- data.frame(dd=c(2,2,2,4,4),fecund=c(2,3,4,2,3), mating=c("Polygyny","Polygyny","Polygyny","Polygyny","Polygyny"),persist=rep(0,5))
-#Monogamy
-mono.to.add<- data.frame(dd=c(2,2,2,4,4,6),fecund=c(2,3,4,2,3,2), mating=c("Monogamy","Monogamy","Monogamy","Monogamy","Monogamy","Monogamy"),persist=rep(0,6))
-
-#select only columns needed
-delta.occ.to.add<- delta.occ[,c("dd","fecund","mating","persist")]
-
-#bind all together
-persist.df<- rbind(delta.occ.to.add,poly.to.add,mono.to.add)
-persist.df.all.reps<- rbind(persist.df,persist.df,persist.df,persist.df,persist.df)
-
-persist.df.all.reps$dd<- factor(persist.df.all.reps$dd)
-persist.df.all.reps$fecund<- factor(persist.df.all.reps$fecund)
-
-#models of persistence####
-
-pers1<- lm(persist ~ dd + fecund + mating, data = persist.df.all.reps)
-pers2<- lm(persist ~ dd + fecund + mating +
-             dd:fecund + dd:mating + mating:fecund, data = persist.df.all.reps)
-pers3<- lm(persist ~ dd * fecund * mating, data = persist.df.all.reps)
-
-
-summary(pers1)$adj.r.squared;summary(pers2)$adj.r.squared;summary(pers3)$adj.r.squared
-
-anova(pers3)
-
-
-
-######################################################################################################################################################
-######################################################################################################################################################
-######################################################################################################################################################
-######################################################################################################################################################
-#
-#proportional occupancy####
-#
-#Remove those simulations where quasi-equilibrium was not maintained
-
-
-complete.design<- occupancy.inits.zone[occupancy.inits.zone$fecund !=2 | occupancy.inits.zone$dd >12 | occupancy.inits.zone$mating !='Monogamy',]
-complete.design<- complete.design[complete.design$fecund !=3 | complete.design$dd >6 | complete.design$mating !='Monogamy',]
-complete.design<- complete.design[complete.design$fecund !=4 | complete.design$dd >4 | complete.design$mating !='Monogamy',]
-
-complete.design<- complete.design[complete.design$fecund !=2 | complete.design$dd >8 |complete.design$mating !='Polygyny',]
-complete.design<- complete.design[complete.design$fecund !=3 | complete.design$dd >6 |complete.design$mating !='Polygyny',]
-complete.design<- complete.design[complete.design$fecund !=4 | complete.design$dd >4 |complete.design$mating !='Polygyny',]
-
-complete.design<- complete.design[complete.design$fecund !=2 | complete.design$dd !=2 |complete.design$mating !='Unlimited',]
-complete.design<- complete.design[complete.design$fecund !=3 | complete.design$dd !=2 |complete.design$mating !='Unlimited',]
-
-complete.design<- complete.design[complete.design$Year>=20,]
-
-
-#Linear model of proportional occupancy####
-
-complete.design$dd.fac<- factor(complete.design$dd)
-complete.design$fecund.fac<- factor(complete.design$fecund)
-
-prev1<- lm(prop.occ~dd.fac+fecund.fac+mating, data=complete.design)
-
-
-
-prev2<-lm(prop.occ~dd.fac+fecund.fac+mating+
-            dd.fac:fecund.fac+dd.fac:mating+fecund.fac:mating, data=complete.design)
-
-
-prev3<- lm(prop.occ~dd.fac*fecund.fac*mating, data=complete.design)
-
-summary(prev1)$adj.r.squared;summary(prev2)$adj.r.squared;summary(prev3)$adj.r.squared
-
-########
-anova(prev2)
-
-#
-#
-#Plot the means - not the model predictions as they can stray above 1
-
-plot.occ<- ddply(complete.design, c("fecund", "dd", "mating"), summarise, mean.occ=mean(prop.occ), se.occ=se(prop.occ))
-
-#create data frame to show "persistence range"
-F2.df<- data.frame(fecund=rep(2,6), dd=c(2,4,8,10,12,14), mating=c("Unlimited","Unlimited","Polygyny","Polygyny","Monogamy","Monogamy"), mean.occ=c(0,0.4204722,0,0.6580548,0,0.7654295))
-F3.df<- data.frame(fecund=rep(3,6), dd=c(2,4,6,8,6,8), mating=c("Unlimited","Unlimited","Polygyny","Polygyny","Monogamy","Monogamy"), mean.occ=c(0,0.6212009,0,0.7664108,0,0.6743296))
-F4.df<- data.frame(fecund=rep(4,4), dd=c(4,6,4,6), mating=c("Polygyny","Polygyny","Monogamy","Monogamy"), mean.occ=c(0,0.6196755,0,0.5655072))
-
-Fall.df<- rbind(F2.df,F3.df,F4.df)
-
-# New facet label names for fecund variable
-fecund.labs <- c("Mean fecundity = 2", "Mean fecundity = 3", "Mean fecundity = 4")
-names(fecund.labs)<- c("2","3","4")
-
-occ.plot.object<-ggplot()+
-  geom_point(data=plot.occ, aes(x=dd, y=mean.occ, colour=mating),size=0.85)+
-  geom_line(data=plot.occ, aes(x=dd, y=mean.occ, colour=mating,group=mating))+
-  geom_line(data=Fall.df, aes(x=dd, y=mean.occ, colour=mating,group=mating), linetype=2)+
-  geom_errorbar(data=plot.occ, aes(x=dd, ymin=mean.occ-se.occ, ymax=mean.occ+se.occ, colour=mating),width=0)+
-  scale_colour_manual(values = c(virid.pal[2], virid.pal[4], virid.pal[8]),guide=F)+
-  ylab("Proportional occupancy")+
-  xlab("")+
-  theme_classic()+
-  scale_x_continuous(breaks=seq(2,14,by=2))+
-  facet_grid(.~fecund)+
-  facet_rep_wrap(~fecund,nrow=1,ncol=3,as.table = F, labeller = labeller(fecund = fecund.labs))+
-  theme( strip.background = element_blank(), axis.text.x = element_blank())
-#setwd("D:/W.Morgan/Wills_stuff/RangeShifter_chptr")
-#save as high resolution jpeg
-#ggsave("occupancyVsHabitat_facet_by_fecund.jpeg",dpi=300,device="jpeg",width=18,height=7, units="cm")
-######################################################################################################################################################
-######################################################################################################################################################
-######################################################################################################################################################
-######################################################################################################################################################
-
+# ######################################################################################################################################################
+# #
+# #Below is a 2-step analysis option looking first at persistence then proportional occupancy.
+# #I think the above version - just mean proportional occupancy at year 50 - is a neater option and shows the key finding in one go
+# #
+# ######################################################################################################################################################
+# ######################################################################################################################################################
+# ######################################################################################################################################################
+# #Persistence####
+# #
+# #Add those combos that are not present anymore (pop went extint) and partition variance for persistence/extinction
+# 
+# 
+# #Polygyny
+# poly.to.add<- data.frame(dd=c(2,2,2,4,4),fecund=c(2,3,4,2,3), mating=c("Polygyny","Polygyny","Polygyny","Polygyny","Polygyny"),persist=rep(0,5))
+# #Monogamy
+# mono.to.add<- data.frame(dd=c(2,2,2,4,4,6),fecund=c(2,3,4,2,3,2), mating=c("Monogamy","Monogamy","Monogamy","Monogamy","Monogamy","Monogamy"),persist=rep(0,6))
+# 
+# #select only columns needed
+# delta.occ.to.add<- delta.occ[,c("dd","fecund","mating","persist")]
+# 
+# #bind all together
+# persist.df<- rbind(delta.occ.to.add,poly.to.add,mono.to.add)
+# persist.df.all.reps<- rbind(persist.df,persist.df,persist.df,persist.df,persist.df)
+# 
+# persist.df.all.reps$dd<- factor(persist.df.all.reps$dd)
+# persist.df.all.reps$fecund<- factor(persist.df.all.reps$fecund)
+# 
+# #models of persistence####
+# 
+# pers1<- lm(persist ~ dd + fecund + mating, data = persist.df.all.reps)
+# pers2<- lm(persist ~ dd + fecund + mating +
+#              dd:fecund + dd:mating + mating:fecund, data = persist.df.all.reps)
+# pers3<- lm(persist ~ dd * fecund * mating, data = persist.df.all.reps)
+# 
+# 
+# summary(pers1)$adj.r.squared;summary(pers2)$adj.r.squared;summary(pers3)$adj.r.squared
+# 
+# anova(pers3)
+# 
+# 
+# 
+# ######################################################################################################################################################
+# ######################################################################################################################################################
+# ######################################################################################################################################################
+# ######################################################################################################################################################
+# #
+# #proportional occupancy####
+# #
+# #Remove those simulations where quasi-equilibrium was not maintained
+# 
+# 
+# complete.design<- occupancy.inits.zone[occupancy.inits.zone$fecund !=2 | occupancy.inits.zone$dd >12 | occupancy.inits.zone$mating !='Monogamy',]
+# complete.design<- complete.design[complete.design$fecund !=3 | complete.design$dd >6 | complete.design$mating !='Monogamy',]
+# complete.design<- complete.design[complete.design$fecund !=4 | complete.design$dd >4 | complete.design$mating !='Monogamy',]
+# 
+# complete.design<- complete.design[complete.design$fecund !=2 | complete.design$dd >8 |complete.design$mating !='Polygyny',]
+# complete.design<- complete.design[complete.design$fecund !=3 | complete.design$dd >6 |complete.design$mating !='Polygyny',]
+# complete.design<- complete.design[complete.design$fecund !=4 | complete.design$dd >4 |complete.design$mating !='Polygyny',]
+# 
+# complete.design<- complete.design[complete.design$fecund !=2 | complete.design$dd !=2 |complete.design$mating !='Unlimited',]
+# complete.design<- complete.design[complete.design$fecund !=3 | complete.design$dd !=2 |complete.design$mating !='Unlimited',]
+# 
+# complete.design<- complete.design[complete.design$Year>=20,]
+# 
+# 
+# #Linear model of proportional occupancy####
+# 
+# complete.design$dd.fac<- factor(complete.design$dd)
+# complete.design$fecund.fac<- factor(complete.design$fecund)
+# 
+# prev1<- lm(prop.occ~dd.fac+fecund.fac+mating, data=complete.design)
+# 
+# 
+# 
+# prev2<-lm(prop.occ~dd.fac+fecund.fac+mating+
+#             dd.fac:fecund.fac+dd.fac:mating+fecund.fac:mating, data=complete.design)
+# 
+# 
+# prev3<- lm(prop.occ~dd.fac*fecund.fac*mating, data=complete.design)
+# 
+# summary(prev1)$adj.r.squared;summary(prev2)$adj.r.squared;summary(prev3)$adj.r.squared
+# 
+# ########
+# anova(prev2)
+# 
+# #
+# #
+# #Plot the means - not the model predictions as they can stray above 1
+# 
+# plot.occ<- ddply(complete.design, c("fecund", "dd", "mating"), summarise, mean.occ=mean(prop.occ), se.occ=se(prop.occ))
+# 
+# #create data frame to show "persistence range"
+# F2.df<- data.frame(fecund=rep(2,6), dd=c(2,4,8,10,12,14), mating=c("Unlimited","Unlimited","Polygyny","Polygyny","Monogamy","Monogamy"), mean.occ=c(0,0.4204722,0,0.6580548,0,0.7654295))
+# F3.df<- data.frame(fecund=rep(3,6), dd=c(2,4,6,8,6,8), mating=c("Unlimited","Unlimited","Polygyny","Polygyny","Monogamy","Monogamy"), mean.occ=c(0,0.6212009,0,0.7664108,0,0.6743296))
+# F4.df<- data.frame(fecund=rep(4,4), dd=c(4,6,4,6), mating=c("Polygyny","Polygyny","Monogamy","Monogamy"), mean.occ=c(0,0.6196755,0,0.5655072))
+# 
+# Fall.df<- rbind(F2.df,F3.df,F4.df)
+# 
+# # New facet label names for fecund variable
+# fecund.labs <- c("Mean fecundity = 2", "Mean fecundity = 3", "Mean fecundity = 4")
+# names(fecund.labs)<- c("2","3","4")
+# 
+# occ.plot.object<-ggplot()+
+#   geom_point(data=plot.occ, aes(x=dd, y=mean.occ, colour=mating),size=0.85)+
+#   geom_line(data=plot.occ, aes(x=dd, y=mean.occ, colour=mating,group=mating))+
+#   geom_line(data=Fall.df, aes(x=dd, y=mean.occ, colour=mating,group=mating), linetype=2)+
+#   geom_errorbar(data=plot.occ, aes(x=dd, ymin=mean.occ-se.occ, ymax=mean.occ+se.occ, colour=mating),width=0)+
+#   scale_colour_manual(values = c(virid.pal[2], virid.pal[4], virid.pal[8]),guide=F)+
+#   ylab("Proportional occupancy")+
+#   xlab("")+
+#   theme_classic()+
+#   scale_x_continuous(breaks=seq(2,14,by=2))+
+#   facet_grid(.~fecund)+
+#   facet_rep_wrap(~fecund,nrow=1,ncol=3,as.table = F, labeller = labeller(fecund = fecund.labs))+
+#   theme( strip.background = element_blank(), axis.text.x = element_blank())
+# #setwd("D:/W.Morgan/Wills_stuff/RangeShifter_chptr")
+# #save as high resolution jpeg
+# #ggsave("occupancyVsHabitat_facet_by_fecund.jpeg",dpi=300,device="jpeg",width=18,height=7, units="cm")
+# ######################################################################################################################################################
+# ######################################################################################################################################################
+# ######################################################################################################################################################
+# ######################################################################################################################################################
+# 
 
 ######################################################################################################################################################
 ######################################################################################################################################################
@@ -713,7 +710,7 @@ occ.plot.object<-ggplot()+
 #
 ######################################################################################################################################################
 
-setwd("D:/W.Morgan/Wills_stuff/RangeShifter_chptr/Experiment_5a_HIGHSURVIVAL/Outputs")
+setwd("C:/Users/whm20/OneDrive/Documents/Documents/PhD/University PC back-up/Wills_stuff/RangeShifter_chptr/Experiment_5a_HIGHSURVIVAL/Outputs")
 
 #Read in population files and add parameter info for habitat quality (dd) and fecundity (f)####
 ######################################################################################################################################################
@@ -1068,17 +1065,17 @@ rate.models$dd.fac<- factor(rate.models$dd)
 rate.models$fecund.fac<- factor(rate.models$fecund)
 
 
-rate1<- lm(rows.per.year~dd.fac+fecund.fac+mating,  data=rate.models)
-rate2<-lm(rows.per.year~dd.fac+fecund.fac+mating+
-            dd.fac:fecund.fac+dd.fac:mating+fecund.fac:mating,  data=rate.models)
-rate3<- lm(rows.per.year~dd.fac*fecund.fac*mating,  data=rate.models)
+rate1<- lm(rows.per.year~dd.fac*fecund.fac*mating,  data=rate.models)
 
-summary(rate1)$adj.r.squared;summary(rate2)$adj.r.squared;summary(rate3)$adj.r.squared#;summary(rate1.1)$adj.r.squared;summary(rate2.1)$adj.r.squared;summary(rate3.1)$adj.r.squared
-
-
+summary(rate1)$adj.r.squared
 anova(rate1)
 
-
+########
+# See variance explained by each main effect and interaction
+rate1.fit<- anova(rate1)
+rate1.fit.ssq<- rate1.fit$`Sum Sq`
+var.expl.rate<- rate1.fit.ssq/sum(rate1.fit.ssq)*100
+round(var.expl.rate,1)
 
 
 ######################################################################################################################################################
