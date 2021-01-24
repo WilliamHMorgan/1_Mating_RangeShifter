@@ -552,6 +552,7 @@ prev1.fit<- anova(prev1)
 prev1.fit.ssq<- prev1.fit$`Sum Sq`
 var.expl<- prev1.fit.ssq/sum(prev1.fit.ssq)*100
 round(var.expl,1)
+cbind(row.names(prev1.fit),round(var.expl,1))
 
 plot.occ<- ddply(occupancy.inits.zone50.complete, c("fecund", "dd", "mating"), summarise, mean.occ=mean(prop.occ), se.occ=se(prop.occ))
 
@@ -559,19 +560,22 @@ plot.occ<- ddply(occupancy.inits.zone50.complete, c("fecund", "dd", "mating"), s
 # New facet label names for fecund variable
 fecund.labs <- c("Mean fecundity = 2", "Mean fecundity = 3", "Mean fecundity = 4")
 names(fecund.labs)<- c("2","3","4")
+panel.labels<- data.frame(label=c("a","b","c"), fecund=c(2,3,4))
+
 
 occ.plot.object<-ggplot()+
   geom_point(data=plot.occ, aes(x=dd, y=mean.occ, colour=mating),size=0.85)+
   geom_line(data=plot.occ, aes(x=dd, y=mean.occ, colour=mating,group=mating))+
   geom_errorbar(data=plot.occ, aes(x=dd, ymin=mean.occ-se.occ, ymax=mean.occ+se.occ, colour=mating),width=0)+
-  scale_colour_manual(values = c(virid.pal[2], virid.pal[4], virid.pal[8]),guide=F)+
-  ylab("Proportional occupancy")+
+  scale_colour_manual(values = c(virid.pal[2], virid.pal[4], virid.pal[8]),labels=c("Not mate limited","Polygynous","Monogamous"))+
+  geom_text(data=panel.labels, aes(x=3,y=0.9,label=label))+
+  ylab("Metapopulation size")+
   xlab("")+
   theme_classic()+
   scale_x_continuous(breaks=seq(2,14,by=2))+
-  facet_grid(.~fecund)+
+  facet_grid(.~fecund, labeller = panel.labels)+
   facet_rep_wrap(~fecund,nrow=1,ncol=3,as.table = F, labeller = labeller(fecund = fecund.labs))+
-  theme( strip.background = element_blank(), axis.text.x = element_blank())
+  theme( strip.background = element_blank(), axis.text.x = element_blank(),legend.position = 'top',legend.title = element_blank())
 #setwd("D:/W.Morgan/Wills_stuff/RangeShifter_chptr")
 #save as high resolution jpeg
 #ggsave("occupancyVsHabitat_facet_by_fecund.jpeg",dpi=300,device="jpeg",width=18,height=7, units="cm")
@@ -1034,27 +1038,30 @@ complete.range$rows.per.year<- complete.range$rng.chng/5
 mean.rate.mating<- ddply(complete.range, c("mating", "dd", "fecund"), summarise, mean_rate=mean(rows.per.year, na.rm = T), se_rate=se(rows.per.year))
 means.by.mating<- ddply(complete.range, "mating", summarise, overall.mean=mean(rows.per.year, na.rm = T), se_rate=se(rows.per.year))
 
+panel.labels2<- data.frame(label=c("d","e","f"), fecund=c(2,3,4))
 
 rate.plot.object<- ggplot()+
   geom_point(data=mean.rate.mating, aes(x=dd, y=mean_rate, colour=mating),size=1)+#
   geom_line(data=mean.rate.mating, aes(x=dd, y=mean_rate, colour=mating, group=mating))+
   geom_errorbar(data=mean.rate.mating, aes(x=dd, ymin=mean_rate-se_rate,ymax=mean_rate+se_rate,colour=mating), width=0)+
-  scale_colour_manual(values = c(virid.pal[8], virid.pal[4], virid.pal[2]),guide=F)+
+  scale_colour_manual(values = c(virid.pal[8], virid.pal[4], virid.pal[2]),guide = guide_legend(override.aes = list(colour='white')))+
+  geom_text(data=panel.labels2, aes(x=3,y=8,label=label))+
   theme_classic()+
   scale_x_continuous(breaks=seq(2,14,by=2))+
   ylab(expression(Rate~of~spread~(rows~generation^-1)))+
-  xlab("Habitat quality 1/b (inds/ha)")+
+  xlab("Habitat quality 1/b (females/patch)")+
   facet_rep_wrap(~fecund,nrow=1,ncol=3,as.table = F, labeller = labeller(fecund = fecund.labs))+
-  theme(strip.background = element_blank(),strip.text.x = element_blank())
+  theme(strip.background = element_blank(),strip.text.x = element_blank(), 
+        legend.text = element_blank(),legend.title = element_blank(), legend.position = 'top')
 
 
 #Plot occupancy and Rate of expansion together
 
 ggarrange(occ.plot.object,rate.plot.object,nrow=2,ncol = 1)
 
-#setwd("D:/W.Morgan/Wills_stuff/RangeShifter_chptr")
+#setwd("C:/Users/whm20/OneDrive/Documents/Documents/PhD/University PC back-up/Wills_stuff/RangeShifter_chptr")
 #save as high resolution jpeg
-#ggsave("BIG_rate_occ_combo_plot.jpeg",dpi=400,device="jpeg",width=18,height=16, units="cm")
+ggsave("BIG_rate_occ_combo_plot.jpeg",dpi=400,device="jpeg",width=18,height=16, units="cm")
 
 
 
@@ -1076,6 +1083,7 @@ rate1.fit<- anova(rate1)
 rate1.fit.ssq<- rate1.fit$`Sum Sq`
 var.expl.rate<- rate1.fit.ssq/sum(rate1.fit.ssq)*100
 round(var.expl.rate,1)
+cbind(row.names(rate1.fit),round(var.expl.rate,1))
 
 
 ######################################################################################################################################################
@@ -1128,17 +1136,22 @@ Mate.Fake.Allee <- data.frame(expand.grid(NInd = seq(min(Mate.Lim_Vs_Allee_MateR
 Mate.p1.Fake.Allee<- predict(Mate.Lim_Vs_Allee_mod1, newdata = Mate.Fake.Allee, type = 'response') 
 Mate.new.Fake.Allee<- cbind(Mate.Fake.Allee, Mate.p1.Fake.Allee)
 
+#add "Not mate limited" to the data frame for plotting
+nml<- data.frame(NInd=c(0,24),mating="Not mate limited", fecund=3,Mate.p1.Fake.Allee=rep(0,2))
+
+Mate.new.Fake.Allee.plot<- rbind(Mate.new.Fake.Allee,nml)
+
 ggplot()+
-  geom_line(data = Mate.new.Fake.Allee, aes(x = NInd, y = Mate.p1.Fake.Allee, colour = mating,
+  geom_line(data = Mate.new.Fake.Allee.plot, aes(x = NInd, y = Mate.p1.Fake.Allee, colour = mating,
                                             group = mating), size =1.5)+
-  scale_colour_manual(values = c(virid.pal[8], virid.pal[4]), guide=F)+
-  geom_hline(yintercept = 0, colour=virid.pal[2], size=1.5)+
+  scale_colour_manual(values = c(virid.pal[8], virid.pal[4],virid.pal[2]))+
   ylab("Proportion unmated females")+
   xlab("Local pop size")+
-  theme_classic()
-#setwd("D:/W.Morgan/Wills_stuff/RangeShifter_chptr")
+  theme_classic()+
+  theme(legend.position="top",legend.title = element_blank())
+setwd("C:/Users/whm20/OneDrive/Documents/Documents/PhD/University PC back-up/Wills_stuff/RangeShifter_chptr")
 #save as high resolution jpeg
-#ggsave("mate_rate.jpeg",dpi=300,device="jpeg",width=4,height=4, units="in")
+ggsave("mate_rate.jpeg",dpi=300,device="jpeg",width=4,height=4, units="in")
 
 
 #Model of female mating rate - neighbourhood scale
@@ -1186,7 +1199,7 @@ ggplot()+
 #Experiment 2####
 
 #No density dependence in settlement rule
-setwd("D:/W.Morgan/Wills_stuff/RangeShifter_chptr/Experiment_5a_HIGHSURVIVAL/Outputs")
+setwd("C:/Users/whm20/OneDrive/Documents/Documents/PhD/University PC back-up/Wills_stuff/RangeShifter_chptr/Experiment_5a_HIGHSURVIVAL/Outputs")
 
 ######################################################################################################################################################
 #Poly - NUll
@@ -1311,7 +1324,7 @@ AlleeMate0.005$se.rate<- AlleeMate_all_5yr_summary$se.rate
 
 #Dendity dependent settlement rule
 
-setwd("D:/W.Morgan/Wills_stuff/RangeShifter_chptr/Experiment_5a_DDS_HIGHSURVIVAL/Outputs")
+setwd("C:/Users/whm20/OneDrive/Documents/Documents/PhD/University PC back-up/Wills_stuff/RangeShifter_chptr/Experiment_5a_DDS_HIGHSURVIVAL/Outputs")
 
 ######################################################################################################################################################
 #Poly - no mate finding
@@ -1442,25 +1455,36 @@ range.ext.0.005<- rbind(SexLim0.005, LimMate0.005, SexAllee0.005, AlleeMate0.005
 comp_unlimited<- mean.rate.mating[mean.rate.mating$mating=="Unlimited"&mean.rate.mating$dd<12&mean.rate.mating$dd>4&mean.rate.mating$fecund==3,
                                   c("dd","fecund","mean_rate","se_rate")]
 
+#colour palettes for figure
+virid.pal2<-viridis(option='plasma',end=0.8,9)
+
+#dodge points
+dodge1<-c(rep(c(-.02,.02),c(2,3)),rep(c(-.02,.02),c(2,2)),rep(c(-.02,.02),c(3,3)),rep(c(-.02,.02),c(2,3)))
+M.S.labs<- c("No mate-finding\nDI settlement","Mate-finding\nDI settlement",
+             "No mate-finding\nDD settlement","Mate-finding\nDD settlement")
+
+panel.labs.ab<- data.frame(label=c("a","b"),mating=factor(c("Polygyny","Monogamy")))
+panel.labs.ab$mating <- ordered(panel.labs.ab$mating , levels = c("Polygyny", "Monogamy"))
+
 ggplot()+
-  geom_point(data=range.ext.0.005[range.ext.0.005$mean.rate>0,], aes(x=dd, y=mean.rate, shape=interaction(finding,settle)), size=2)+
-  geom_line(data=range.ext.0.005[range.ext.0.005$mean.rate>0,], aes(x=dd, y=mean.rate, group=interaction(settle,finding)), size=.5)+
-  geom_errorbar(data=range.ext.0.005[range.ext.0.005$mean.rate>0,], aes(x=dd, ymin=mean.rate-se.rate,ymax=mean.rate+se.rate, group=interaction(finding,settle)), width=0)+
-  scale_colour_manual(values = c(virid.pal[4], virid.pal[8]),guide=F)+
-  scale_shape_manual(values = c(19,1,17,2),guide=F)+
+  geom_point(data=range.ext.0.005[range.ext.0.005$mean.rate>0,], aes(x=(dd+dodge1), y=mean.rate, colour=interaction(finding,settle)), size=1.5)+
+  geom_line(data=range.ext.0.005[range.ext.0.005$mean.rate>0,], aes(x=(dd+dodge1), y=mean.rate, group=interaction(finding,settle), colour=interaction(finding,settle)), size=.5)+
+  geom_errorbar(data=range.ext.0.005[range.ext.0.005$mean.rate>0,], aes(x=(dd+dodge1), ymin=mean.rate-se.rate,ymax=mean.rate+se.rate, group=interaction(finding,settle), colour=interaction(finding,settle)), width=0)+
+  scale_colour_manual(values=c(virid.pal2[1],virid.pal2[6],virid.pal2[3],virid.pal2[9]), labels=M.S.labs)+
   theme_classic()+
   ylab(expression(Rate~of~spread~(rows~generation^-1)))+
   #xlim(0.3,1)+
-  xlab("Habitat quality 1/b (inds/ha)")+
+  xlab("Habitat quality 1/b (females/patch)")+
   facet_rep_grid(.~mating)+
   geom_point(data=comp_unlimited, aes(x=dd, y=mean_rate), size=1.5)+
   geom_line(data=comp_unlimited, aes(x=dd, y=mean_rate), linetype=2)+
   geom_errorbar(data=comp_unlimited, aes(x=dd, ymin=mean_rate-se_rate,ymax=mean_rate+se_rate), width=0)+
-  theme( strip.background = element_blank())
+  geom_text(data=panel.labs.ab, aes(x=6.5,y=8,label=label))+
+  theme( strip.background = element_blank(),legend.position="top",legend.title = element_blank())
 
-#setwd("D:/W.Morgan/Wills_stuff/RangeShifter_chptr")
+setwd("C:/Users/whm20/OneDrive/Documents/Documents/PhD/University PC back-up/Wills_stuff/RangeShifter_chptr")
 #save as high resolution jpeg
-#ggsave("Rate_informed_dispersal_VS_unlimited.jpeg",dpi=400,device="jpeg",width=15,height=9, units="cm")
+ggsave("Rate_informed_dispersal_VS_unlimited.jpeg",dpi=400,device="jpeg",width=15,height=9, units="cm")
 
 
 
@@ -1471,7 +1495,7 @@ ggplot()+
 #
 #Visulasing simulations - the effect of mate finding####
 
-setwd("D:/W.Morgan/Wills_stuff/RangeShifter_chptr/Experiment_5a_DDS_HIGHSURVIVAL/Outputs")
+setwd("C:/Users/whm20/OneDrive/Documents/Documents/PhD/University PC back-up/Wills_stuff/RangeShifter_chptr/Experiment_5a_DDS_HIGHSURVIVAL/Outputs")
 
 #For dd = 10 and fecund = 3
 #
@@ -1501,26 +1525,47 @@ vis2$mate.rate<- (vis2$Nfemales_stage1 - vis2$unmated.fem) / vis2$Nfemales_stage
 vis2$Breeding<- ifelse(vis2$mate.rate==1,'Y','N')
 
 
-#Select 1 of the reps and plot 1 - mating rate for years 10, 30 and 50
+#No mate finding
+vis.finding.0<- vis2[vis2$finding==0,]
 
 
-ggplot()+
-  geom_jitter(data = vis2[vis2$y>400 & vis2$Year==10|
-                            vis2$y>400 & vis2$Year==20|
-                            vis2$y>400 & vis2$Year==30|
-                            vis2$y>400 & vis2$Year==40|
-                            vis2$y>400 & vis2$Year==50,], aes(x=x, y=y, colour=Breeding), height = 3, width = 1, size=0.2)+
-  scale_colour_viridis(discrete=T,option = 'inferno',direction = -1,end=0.8,guide=F)+
-  facet_grid(~ finding + Year, as.table = F)+
+vis.plot.no.finding<- ggplot()+
+  geom_jitter(data = vis.finding.0[vis.finding.0$y>400 & vis.finding.0$Year==10|
+                            vis.finding.0$y>400 & vis.finding.0$Year==20|
+                            vis.finding.0$y>400 & vis.finding.0$Year==30|
+                            vis.finding.0$y>400 & vis.finding.0$Year==40|
+                            vis.finding.0$y>400 & vis.finding.0$Year==50,], aes(x=x, y=y, colour=Breeding), height = 3, width = 1, size=0.2)+
+  scale_colour_manual(values=c("white","black"),guide=F)+
+  facet_grid(~ Year, as.table = F)+
   theme_void()+
   ylim(400,1000)+
-  labs(title = "  No mate-searching        Mate-searching    ")+
-  theme(panel.background=element_rect(fill='grey50'), strip.text = element_blank(),plot.margin=margin(0.5,0.5,0.5,0.5,unit = 'cm'),
-        title = element_text(size=12),panel.spacing = unit(0.1, "lines"))
+  labs(title = "No mate-finding")+
+  theme(panel.background=element_rect(fill='grey50'), strip.text.x = element_blank(),plot.margin=margin(0.5,0.5,0.5,0.5,unit = 'cm'),
+        title = element_text(size=10),panel.spacing = unit(0.1, "lines"))
+        
+#Mate finding
+vis.finding.1<- vis2[vis2$finding==1,]
 
-#setwd("D:/W.Morgan/Wills_stuff/RangeShifter_chptr")
+
+vis.plot.mate.finding<- ggplot()+
+  geom_jitter(data = vis.finding.1[vis.finding.1$y>400 & vis.finding.1$Year==10|
+                                     vis.finding.1$y>400 & vis.finding.1$Year==20|
+                                     vis.finding.1$y>400 & vis.finding.1$Year==30|
+                                     vis.finding.1$y>400 & vis.finding.1$Year==40|
+                                     vis.finding.1$y>400 & vis.finding.1$Year==50,], aes(x=x, y=y, colour=Breeding), height = 3, width = 1, size=0.2)+
+  scale_colour_manual(values=c("white","black"),guide=F)+
+  facet_grid(~ Year, as.table = F)+
+  theme_void()+
+  ylim(400,1000)+
+  labs(title = "Mate-finding")+
+  theme(panel.background=element_rect(fill='grey50'), strip.text.x = element_blank(),plot.margin=margin(0.5,0.5,0.5,0.5,unit = 'cm'),
+        title = element_text(size=10),panel.spacing = unit(0.1, "lines"))
+        
+ggarrange(vis.plot.no.finding,vis.plot.mate.finding,nrow = 1)
+
+setwd("C:/Users/whm20/OneDrive/Documents/Documents/PhD/University PC back-up/Wills_stuff/RangeShifter_chptr")
 #save as high resolution jpeg
-#ggsave("visualsing simulation.jpeg",dpi=300,device="jpeg",width=11,height=14, units="cm")
+ggsave("visualsing simulation.jpeg",dpi=300,device="jpeg",width=11,height=11, units="cm")
 
 
 
@@ -1534,7 +1579,7 @@ ggplot()+
 
 
 #No density dependence in settlement rule
-setwd("D:/W.Morgan/Wills_stuff/RangeShifter_chptr/Experiment_5a_HIGHSURVIVAL/Outputs")
+setwd("C:/Users/whm20/OneDrive/Documents/Documents/PhD/University PC back-up/Wills_stuff/RangeShifter_chptr/Experiment_5a_HIGHSURVIVAL/Outputs")
 
 ######################################################################################################################################################
 #Polygyny - no mate finding
@@ -1730,7 +1775,7 @@ AlleeMate_ALL_POP_RNG_summary$mating<- as.factor('Monogamy');AlleeMate_ALL_POP_R
 ######################################################################################################################################################
 ######################################################################################################################################################
 #Dendity dependent settlement rule
-setwd("D:/W.Morgan/Wills_stuff/RangeShifter_chptr/Experiment_5a_DDS_HIGHSURVIVAL/Outputs")
+setwd("C:/Users/whm20/OneDrive/Documents/Documents/PhD/University PC back-up/Wills_stuff/RangeShifter_chptr/Experiment_5a_DDS_HIGHSURVIVAL/Outputs")
 
 ######################################################################################################################################################
 #Polygyny - no mate finding
@@ -1989,7 +2034,7 @@ p1<- ggplot()+
   theme( strip.background = element_blank(),axis.ticks.x = element_blank(),axis.text.x = element_blank())+
   scale_y_continuous(breaks = c(0,0.5,1), limits = c(0,1))+
   scale_x_discrete(labels = c("Edge", "", "", "", "", ""))+
-  geom_hline(yintercept = 0.8, linetype=2,colour='blue')
+  geom_hline(yintercept = 0.8, linetype=2)
 
 p2<- ggplot()+
   geom_line(data=All_mean_occ.summary[All_mean_occ.summary$mating=='Polygyny' & All_mean_occ.summary$settle=='DD',], 
@@ -2003,7 +2048,7 @@ p2<- ggplot()+
   theme( strip.background = element_blank(),axis.ticks.x = element_blank(),axis.text.x = element_blank())+
   scale_y_continuous(breaks = c(0,0.5,1), limits = c(0,1))+
   scale_x_discrete(labels = c("Edge", "", "", "", "", ""))+
-  geom_hline(yintercept = 0.8, linetype=2,colour='blue')
+  geom_hline(yintercept = 0.8, linetype=2)
 
 p3<- ggplot()+
   geom_line(data=All_mean_occ.summary[All_mean_occ.summary$mating=='Monogamy' & All_mean_occ.summary$settle=='DI',], 
@@ -2016,7 +2061,7 @@ p3<- ggplot()+
   theme_classic()+
   theme( strip.background = element_blank(),axis.ticks.x = element_blank(),axis.text.x = element_blank())+
   scale_y_continuous(breaks = c(0,0.5,1), limits = c(0,1))+
-  geom_hline(yintercept = 0.8, linetype=2,colour='blue')
+  geom_hline(yintercept = 0.8, linetype=2)
 
 p4<- ggplot()+
   geom_line(data=All_mean_occ.summary[All_mean_occ.summary$mating=='Monogamy' & All_mean_occ.summary$settle=='DD',], 
@@ -2029,7 +2074,7 @@ p4<- ggplot()+
   theme_classic()+
   theme( strip.background = element_blank(),axis.ticks.x = element_blank(),axis.text.x = element_blank())+
   scale_y_continuous(breaks = c(0,0.5,1), limits = c(0,1))+
-  geom_hline(yintercept = 0.8, linetype=2,colour='blue')
+  geom_hline(yintercept = 0.8, linetype=2)
 
 
 
@@ -2040,88 +2085,89 @@ p4<- ggplot()+
 just.a.line<- data.frame(x=0:1,y=1:0)
 just.another.line<- data.frame(x=c(0.8,0.8),y=c(0,0.6))
 
+#create standard jitter
+jitter2<- c(rep(c(0.005,-0.005),each=20),rep(c(0.01,-0.01),each=20))
+tester1$jitter.x<-tester1$prop.breed.occ.fac+jitter2
 
 m1<- ggplot()+
   annotation_custom(ggplotGrob(p1), xmin = 0.4, xmax = 1, 
                     ymin = 0.6, ymax = 1.1)+
-  geom_point(data=All_mate_rate[All_mate_rate$mating=='Polygyny' & All_mate_rate$settle=='DI' & 
-                                  All_mate_rate$edge.10 < 107 & All_mate_rate$edge.10 > 100,], aes(x=prop.breed.occ, y=1-mean.mate.rate, colour=finding),alpha=0.5,size=1,shape=16)+
+  geom_point(data=tester1[tester1$mating=='Polygyny' & tester1$settle=='DI',], aes(x=jitter.x, y=1-mean.of.mean, colour=finding),size=1.25,shape=16)+
+  geom_errorbar(data=tester1[tester1$mating=='Polygyny' & tester1$settle=='DI',], aes(x=jitter.x, ymax=1-mean.of.mean+se.of.mean, ymin=1-mean.of.mean-se.of.mean, colour=finding),width=0)+
+  geom_line(data=tester1[tester1$mating=='Polygyny' & tester1$settle=='DI',], aes(x=jitter.x, y=1-mean.of.mean, colour=finding, group=finding))+
   ylab("Proportion unmated females")+
   xlab("")+
   theme_classic()+
   theme( strip.background = element_blank())+
   scale_colour_viridis(option='magma', discrete = T, end=0.8, guide=F)+
   scale_shape(guide=F)+
-  ylim(0,1)+ 
-  xlim(0,1)+
+  ylim(0,1)+
   ggtitle("Polygyny", "Density independent settlement")+
   coord_fixed()+
-  geom_line(data=just.a.line,aes(x=x,y=y),colour='blue')+
-  geom_line(data=just.another.line,aes(x=x,y=y),colour='blue', linetype=2,size=1)
-
+  geom_line(data=just.another.line,aes(x=x,y=y), linetype=2,size=1)+
+  annotate("text", x = 0.2, y = 1, label = "a")
 
 
 m2<- ggplot()+
   annotation_custom(ggplotGrob(p2), xmin = 0.4, xmax = 1, 
                     ymin = 0.6, ymax = 1.1)+
-  geom_point(data=All_mate_rate[All_mate_rate$mating=='Polygyny' & All_mate_rate$settle=='DD' & 
-                                  All_mate_rate$edge.10 < 107 & All_mate_rate$edge.10 > 100,], aes(x=prop.breed.occ.fac, y=1-mean.mate.rate, colour=finding),alpha=0.5,size=1,shape=16)+
+  geom_point(data=tester1[tester1$mating=='Polygyny' & tester1$settle=='DD',], aes(x=jitter.x, y=1-mean.of.mean, colour=finding),size=1.25,shape=16)+
+  geom_errorbar(data=tester1[tester1$mating=='Polygyny' & tester1$settle=='DD',], aes(x=jitter.x, ymax=1-mean.of.mean+se.of.mean, ymin=1-mean.of.mean-se.of.mean, colour=finding),width=0)+
+  geom_line(data=tester1[tester1$mating=='Polygyny' & tester1$settle=='DD',], aes(x=jitter.x, y=1-mean.of.mean, colour=finding,group=finding))+
   ylab("Proportion unmated females")+
   xlab("")+
   theme_classic()+
   theme( strip.background = element_blank())+
   scale_colour_viridis(option='magma', discrete = T, end=0.8, guide=F)+
   scale_shape(guide=F)+
-  ylim(0,1)+ 
-  xlim(0,1)+
+  ylim(0,1)+
   ggtitle("", "Density dependent settlement")+
   coord_fixed()+
-  geom_line(data=just.a.line,aes(x=x,y=y),colour='blue')+
-  geom_line(data=just.another.line,aes(x=x,y=y),colour='blue', linetype=2,size=1)
-
+  geom_line(data=just.another.line,aes(x=x,y=y), linetype=2,size=1)+
+  annotate("text", x = 0.2, y = 1, label = "b")
 
 m3<- ggplot()+
   annotation_custom(ggplotGrob(p3), xmin = 0.4, xmax = 1, 
                     ymin = 0.6, ymax = 1.1)+
-  geom_point(data=All_mate_rate[All_mate_rate$mating=='Monogamy' & All_mate_rate$settle=='DI' & 
-                                  All_mate_rate$edge.10 < 107 & All_mate_rate$edge.10 > 100,], aes(x=prop.breed.occ, y=1-mean.mate.rate, colour=finding),alpha=0.5,size=1,shape=16)+
+  geom_point(data=tester1[tester1$mating=='Monogamy' & tester1$settle=='DI',], aes(x=jitter.x, y=1-mean.of.mean, colour=finding),size=1.25,shape=16)+
+  geom_errorbar(data=tester1[tester1$mating=='Monogamy' & tester1$settle=='DI',], aes(x=jitter.x, ymax=1-mean.of.mean+se.of.mean, ymin=1-mean.of.mean-se.of.mean, colour=finding),width=0)+
+  geom_line(data=tester1[tester1$mating=='Monogamy' & tester1$settle=='DI',], aes(x=jitter.x, y=1-mean.of.mean, colour=finding,group=finding))+
   ylab("Proportion unmated females")+
-  xlab("Neighbourhood occupancy")+
+  xlab("Neighbourhood occupancy (P)")+
   theme_classic()+
   theme( strip.background = element_blank())+
   scale_colour_viridis(option='magma', discrete = T, end=0.8, guide=F)+
   scale_shape(guide=F)+
-  ylim(0,1)+ 
-  xlim(0,1)+
+  ylim(0,1)+
   ggtitle("Monogamy", "Density independent settlement")+
   coord_fixed()+
-  geom_line(data=just.a.line,aes(x=x,y=y),colour='blue')+
-  geom_line(data=just.another.line,aes(x=x,y=y),colour='blue', linetype=2,size=1)
+  geom_line(data=just.another.line,aes(x=x,y=y), linetype=2,size=1)+
+  annotate("text", x = 0.2, y = 1, label = "c")
 
 
 m4<- ggplot()+
   annotation_custom(ggplotGrob(p4), xmin = 0.4, xmax = 1, 
                     ymin = 0.6, ymax = 1.1)+
-  geom_point(data=All_mate_rate[All_mate_rate$mating=='Monogamy' & All_mate_rate$settle=='DD' & 
-                                  All_mate_rate$edge.10 < 107 & All_mate_rate$edge.10 > 100,], aes(x=prop.breed.occ, y=1-mean.mate.rate, colour=finding),alpha=0.5,size=1,shape=16)+
+  geom_point(data=tester1[tester1$mating=='Monogamy' & tester1$settle=='DD',], aes(x=jitter.x, y=1-mean.of.mean, colour=finding),size=1.25,shape=16)+
+  geom_errorbar(data=tester1[tester1$mating=='Monogamy' & tester1$settle=='DD',], aes(x=jitter.x, ymax=1-mean.of.mean+se.of.mean, ymin=1-mean.of.mean-se.of.mean, colour=finding),width=0)+
+  geom_line(data=tester1[tester1$mating=='Monogamy' & tester1$settle=='DD',], aes(x=jitter.x, y=1-mean.of.mean, colour=finding,group=finding))+
   ylab("Proportion unmated females")+
-  xlab("Neighbourhood occupancy")+
+  xlab("Neighbourhood occupancy (P)")+
   theme_classic()+
   theme( strip.background = element_blank())+
   scale_colour_viridis(option='magma', discrete = T, end=0.8, guide=F)+
   scale_shape(guide=F)+
-  ylim(0,1)+ 
-  xlim(0,1)+
+  ylim(0,1)+
   ggtitle("", "Density dependent settlement")+
   coord_fixed()+
-  geom_line(data=just.a.line,aes(x=x,y=y),colour='blue')+
-  geom_line(data=just.another.line,aes(x=x,y=y),colour='blue', linetype=2,size=1)
+  geom_line(data=just.another.line,aes(x=x,y=y), linetype=2,size=1)+
+  annotate("text", x = 0.2, y = 1, label = "d")
 
 
 ggarrange(m1,m2,m3,m4,nrow=2,ncol=2)
 
 
-setwd("D:/W.Morgan/Wills_stuff/RangeShifter_chptr")
+setwd("C:/Users/whm20/OneDrive/Documents/Documents/PhD/University PC back-up/Wills_stuff/RangeShifter_chptr")
 #save as high resolution jpeg
 ggsave("neighbourhood occ vs mate rate_WITH INSETS.jpeg",dpi=300,device="jpeg",width=18,height=18, units="cm")
 
