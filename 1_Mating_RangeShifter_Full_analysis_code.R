@@ -1460,8 +1460,8 @@ virid.pal2<-viridis(option='plasma',end=0.8,9)
 
 #dodge points
 dodge1<-c(rep(c(-.02,.02),c(2,3)),rep(c(-.02,.02),c(2,2)),rep(c(-.02,.02),c(3,3)),rep(c(-.02,.02),c(2,3)))
-M.S.labs<- c("No mate-finding\nDI settlement","Mate-finding\nDI settlement",
-             "No mate-finding\nDD settlement","Mate-finding\nDD settlement")
+M.S.labs<- c("No mate-search\nDI settlement","Mate-search\nDI settlement",
+             "No mate-search\nDD settlement","Mate-search\nDD settlement")
 
 panel.labs.ab<- data.frame(label=c("a","b"),mating=factor(c("Polygyny","Monogamy")))
 panel.labs.ab$mating <- ordered(panel.labs.ab$mating , levels = c("Polygyny", "Monogamy"))
@@ -1539,7 +1539,7 @@ vis.plot.no.finding<- ggplot()+
   facet_grid(~ Year, as.table = F)+
   theme_void()+
   ylim(400,1000)+
-  labs(title = "No mate-finding")+
+  labs(title = "No mate-search")+
   theme(panel.background=element_rect(fill='grey50'), strip.text.x = element_blank(),plot.margin=margin(0.5,0.5,0.5,0.5,unit = 'cm'),
         title = element_text(size=10),panel.spacing = unit(0.1, "lines"))
         
@@ -1557,7 +1557,7 @@ vis.plot.mate.finding<- ggplot()+
   facet_grid(~ Year, as.table = F)+
   theme_void()+
   ylim(400,1000)+
-  labs(title = "Mate-finding")+
+  labs(title = "Mate-search")+
   theme(panel.background=element_rect(fill='grey50'), strip.text.x = element_blank(),plot.margin=margin(0.5,0.5,0.5,0.5,unit = 'cm'),
         title = element_text(size=10),panel.spacing = unit(0.1, "lines"))
         
